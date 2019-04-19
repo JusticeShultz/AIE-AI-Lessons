@@ -8,6 +8,7 @@ public class Performer : MonoBehaviour
     public float Interval = 2.0f;
     public LayerMask obstacleMask;
     public Animator anim;
+    public Animator anim2;
 
     Rigidbody rgb;
     bool canMove = true;
@@ -25,18 +26,24 @@ public class Performer : MonoBehaviour
         transform.rotation = Quaternion.Euler(0, Random.Range(-180, 180), 0);
 
         canMove = true;
+        anim2.SetBool("Moving", true);
 
         yield return new WaitForSeconds(Interval * 3);
 
         canMove = false;
+        anim2.SetBool("Moving", false);
+
+        yield return new WaitForSeconds(Interval);
 
         rgb.velocity = Vector3.zero;
 
         anim.SetTrigger("Perform");
+        anim2.SetTrigger("Perform");
 
         yield return new WaitForSeconds(Interval * 2);
 
         canMove = true;
+        anim2.SetBool("Moving", true);
 
         StartCoroutine(Spawn());
     }

@@ -8,6 +8,7 @@ public class Teacher : MonoBehaviour
     public float Interval = 2.0f;
     public float MaxSightDistance = 100;
     public LayerMask obstacleMask;
+    public Animator anim;
 
     [HideInInspector] public GameObject inView;
 
@@ -52,8 +53,13 @@ public class Teacher : MonoBehaviour
         {
             transform.LookAt(inView.transform.position);
             Speed = NormalSpeed * 3;
+            anim.SetBool("Running", true);
         }
-        else Speed = NormalSpeed;
+        else
+        {
+            anim.SetBool("Running", false);
+            Speed = NormalSpeed;
+        }
     }
 
     private void OnCollisionEnter(Collision collision)
