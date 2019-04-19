@@ -6,22 +6,24 @@ public class EnemyAI : MonoBehaviour
 {
     public float move_speed = 1.25f;
     public float viewRadius;
-    [Range(0, 360)]
-    public float viewAngle;
-    
     public LayerMask targetMask;
     public LayerMask obstacleMask;
     public GameObject Body;
     public GameObject RootRotation;
     public Animator animator;
+    public float MaxHitDistance = 3.0f;
+    public float AttackRate = 1.5f;
 
-    [HideInInspector]
-    public List<Transform> visibleTargets = new List<Transform>();
+    [Range(0, 360)] public float viewAngle;
+
+    [HideInInspector] public Transform current_target;
+    [HideInInspector] public bool CanAttack = true;
+    [HideInInspector] public List<Transform> visibleTargets = new List<Transform>();
 
     private Rigidbody body_RigidBody;
 
     bool PlayerIsSeeable = false;
-    Transform current_target;
+    
 
     void Start()
     {
@@ -36,8 +38,28 @@ public class EnemyAI : MonoBehaviour
         RootRotation.transform.position = Body.transform.position;
         Body.transform.rotation = Quaternion.Slerp(Body.transform.rotation, new Quaternion(0, RootRotation.transform.rotation.y, 0, RootRotation.transform.rotation.w), 0.25f);
 
-        if(current_target != null)
-            body_RigidBody.velocity = Body.transform.forward * move_speed;
+        if (current_target != null)
+        {
+            if (Vector3.Distance(transform.position, current_target.transform.position) <= MaxHitDistance && CanAttack)
+            {
+                CanAttack = false;
+                StartCoroutine("QueueAttack");
+            }
+            else if (Vector3.Distance(transform.position, current_target.transform.position) > MaxHitDistance && CanAttack)
+                if (animator.GetBool("PlayerSeen") && animator.GetBool("PlayerNearby") && animator.GetBool("CanMove") && animator.GetCurrentAnimatorStateInfo(0).IsName("Walking"))
+                    body_RigidBody.velocity = Body.transform.forward * move_speed;
+        }
+
+        animator.SetBool("CanMove", CanAttack);
+    }
+
+    IEnumerator QueueAttack()
+    {
+        animator.SetInteger("AttackType", Random.Range(1, 4));
+        animator.SetTrigger("Attack");
+
+        yield return new WaitForSeconds(AttackRate);
+        CanAttack = true;
     }
 
     IEnumerator FindTargetsWithDelay(float delay)
@@ -98,5 +120,15 @@ public class EnemyAI : MonoBehaviour
             angleInDegrees += transform.eulerAngles.y;
         }
         return new Vector3(Mathf.Sin(angleInDegrees * Mathf.Deg2Rad), 0, Mathf.Cos(angleInDegrees * Mathf.Deg2Rad));
+    }
+
+    public void Die()
+    {
+        print("Guess I'll die");
+        animator.SetInteger("DeathType", Random.Range(1, 4));
+        animator.SetInteger("Health", 0);
+        Body.GetComponent<Rigidbody>().isKinematic = true;
+        Body.GetComponent<BoxCollider>().enabled = false;
+        enabled = false;
     }
 }
